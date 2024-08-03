@@ -1,6 +1,7 @@
 package com.komputerkit.sqlitedatabase;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -27,6 +29,8 @@ public class MainActivity extends AppCompatActivity {
     List<Barang> databarang = new ArrayList<Barang>();
     BarangAdapter adapter;
     RecyclerView rcvBarang;
+
+    String idbarang;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +76,16 @@ public class MainActivity extends AppCompatActivity {
                     pesan("insert gagal");
                 }
             }else {
-                pesan("update");
+                String sql = "UPDATE tblbarang\n" +
+                        "SET barang = \'"+barang+"', stok = "+stock+",harga = "+harga+"\n" +
+                        "WHERE idbarang = "+idbarang+";";
+
+                if (db.runSQL(sql)){
+                    pesan("Data Sudah Di Ubah");
+                    selectData();
+                }else {
+                    pesan("Data Tidak Bisa Di Ubah");
+                }
             }
         }
         etBarang.setText("");
@@ -105,13 +118,45 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void deleteData (String id){
-        String idbarang = id;
-        String sql = "DELETE FROM tblbarang WHERE idbarang='"+idbarang+"';";
-        if (db.runSQL(sql)){
-            pesan("Data Sudah Di Hapus");
-            selectData();
-        }else {
-            pesan("Data Tidak Bisa Di Hapus");
-        }
+        idbarang = id;
+        AlertDialog.Builder al = new AlertDialog.Builder(this);
+        al.setTitle("Peringatan");
+        al.setMessage("Yakin Anda Hapus");
+        al.setPositiveButton("Ya", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+                String sql = "DELETE FROM tblbarang WHERE idbarang='"+idbarang+"';";
+                if (db.runSQL(sql)){
+                    pesan("Data Sudah Di Hapus");
+                    selectData();
+                }else {
+                    pesan("Data Tidak Bisa Di Hapus");
+                }
+            }
+        });
+        al.setNegativeButton("Tidak", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+                dialog.cancel();
+            }
+        });
+
+        al.show();
+
+
+
+    }
+    @SuppressLint("Range")
+    public void selectUpdate(String id){
+        idbarang = id;
+        String sql="SELECT * FROM tblbarang WHERE idbarang = "+id+";";
+        Cursor cursor = db.select(sql);
+        cursor.moveToNext();
+
+        etBarang.setText(cursor.getString(cursor.getColumnIndex("barang")));
+        etStock.setText(cursor.getString(cursor.getColumnIndex("stok")));
+        etHarga.setText(cursor.getString(cursor.getColumnIndex("harga")));
+
+        tvPilihan.setText("update");
     }
 }
